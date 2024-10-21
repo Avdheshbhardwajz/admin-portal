@@ -46,7 +46,7 @@ const GridTable: React.FC<GridTableProps> = ({ tableName }) => {
 
           // Add Edit button column
           columns.push({
-            header: "Actions",
+            headerName: "Actions",
             cellRenderer: (params: any) => (
               <button
                 onClick={() => handleEditButtonClick(params.data)}
