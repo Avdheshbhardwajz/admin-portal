@@ -25,7 +25,7 @@ const GridTable: React.FC<GridTableProps> = ({ tableName }) => {
     Papa.parse(csvFile, {
       download: true,
       header: true, // Treat the first row as headers
-      complete: (result) => {
+      complete: (result :  Papa.ParseResult<any>) => {
         const data = result.data;
         if (data.length > 0) {
           // Dynamically create column definitions from CSV header
@@ -46,7 +46,7 @@ const GridTable: React.FC<GridTableProps> = ({ tableName }) => {
 
           // Add Edit button column
           columns.push({
-            headerName: "Actions",
+            header: "Actions",
             cellRenderer: (params: any) => (
               <button
                 onClick={() => handleEditButtonClick(params.data)}
@@ -62,7 +62,7 @@ const GridTable: React.FC<GridTableProps> = ({ tableName }) => {
           setRowData(data); // Set row data for Ag-Grid
         }
       },
-      error: (err) => console.error("Error parsing CSV file: ", err),
+      error: (err : Error) => console.error("Error parsing CSV file: ", err),
     });
   }, [tableName, pendingChanges]); // Re-run if pending changes are updated
 
