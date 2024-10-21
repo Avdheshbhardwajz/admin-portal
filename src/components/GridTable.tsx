@@ -11,9 +11,19 @@ interface GridTableProps {
   tableName: string; // Pass the table name from App
 }
 
+// Define a specific type for column definitions
+interface ColumnDef {
+  field: string;
+  filter: boolean;
+  cellStyle: (params: any) => { backgroundColor: string; color: string; };
+  headerName?: string; // optional property for header name
+  cellRenderer?: (params: any) => JSX.Element;
+  width?: number;
+}
+
 const GridTable: React.FC<GridTableProps> = ({ tableName }) => {
   const [rowData, setRowData] = useState<any[]>([]); // Store table data
-  const [colDefs, setColDefs] = useState<any[]>([]); // Store column definitions
+  const [colDefs, setColDefs] = useState<ColumnDef[]>([]); // Store column definitions
   const [isModalOpen, setIsModalOpen] = useState(false); // Modal state
   const [selectedRowData, setSelectedRowData] = useState<any>(null); // Store selected row data
   const [editedData, setEditedData] = useState<any>({}); // Store edited data
@@ -25,11 +35,11 @@ const GridTable: React.FC<GridTableProps> = ({ tableName }) => {
     Papa.parse(csvFile, {
       download: true,
       header: true, // Treat the first row as headers
-      complete: (result :  Papa.ParseResult<any>) => {
+      complete: (result: Papa.ParseResult<any>) => {
         const data = result.data;
         if (data.length > 0) {
           // Dynamically create column definitions from CSV header
-          const columns = Object.keys(data[0]).map((key) => ({
+          const columns: ColumnDef[] = Object.keys(data[0]).map((key) => ({
             field: key,
             filter: true, // Enable filtering on all columns
             cellStyle: (params: any) => {
@@ -62,7 +72,7 @@ const GridTable: React.FC<GridTableProps> = ({ tableName }) => {
           setRowData(data); // Set row data for Ag-Grid
         }
       },
-      error: (err : Error) => console.error("Error parsing CSV file: ", err),
+      error: (err: Error) => console.error("Error parsing CSV file: ", err),
     });
   }, [tableName, pendingChanges]); // Re-run if pending changes are updated
 
