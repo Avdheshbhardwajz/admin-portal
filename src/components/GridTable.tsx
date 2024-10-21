@@ -3,61 +3,55 @@ import { AgGridReact } from "ag-grid-react";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
 import Papa from "papaparse";
-import Modal from "react-modal"; // Importing react-modal
-import { toast, ToastContainer } from 'react-toastify'; // For notifications
-import 'react-toastify/dist/ReactToastify.css'; // Toast styles
+import Modal from "react-modal";
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 interface GridTableProps {
-  tableName: string; // Pass the table name from App
+  tableName: string;
 }
 
-// Define a specific type for column definitions
 interface ColumnDef {
   field: string;
   filter: boolean;
-  cellStyle: (params: any) => { backgroundColor: string; color: string; };
-  headerName?: string; // Optional property for header name
-  cellRenderer?: (params: any) => JSX.Element; // Optional property for cell renderer
-  width?: number; // Optional property for width
+  cellStyle?: (params: any) => { backgroundColor: string; color: string }; // Made optional
+  headerName?: string;
+  cellRenderer?: (params: any) => JSX.Element;
+  width?: number;
 }
 
 const GridTable: React.FC<GridTableProps> = ({ tableName }) => {
-  const [rowData, setRowData] = useState<any[]>([]); // Store table data
-  const [colDefs, setColDefs] = useState<ColumnDef[]>([]); // Store column definitions
-  const [isModalOpen, setIsModalOpen] = useState(false); // Modal state
-  const [selectedRowData, setSelectedRowData] = useState<any>(null); // Store selected row data
-  const [editedData, setEditedData] = useState<any>({}); // Store edited data
-  const [pendingChanges, setPendingChanges] = useState<any>({}); // Store pending cell changes
+  const [rowData, setRowData] = useState<any[]>([]);
+  const [colDefs, setColDefs] = useState<ColumnDef[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedRowData, setSelectedRowData] = useState<any>(null);
+  const [editedData, setEditedData] = useState<any>({});
+  const [pendingChanges, setPendingChanges] = useState<any>({});
 
-  // Load CSV file and parse it using Papa Parse
   useEffect(() => {
-    const csvFile = `/assets/csv/${tableName.toLowerCase().replace(/ /g, "_")}.csv`; // Construct the file path
+    const csvFile = `/assets/csv/${tableName.toLowerCase().replace(/ /g, "_")}.csv`;
     Papa.parse(csvFile, {
       download: true,
-      header: true, // Treat the first row as headers
+      header: true,
       complete: (result: Papa.ParseResult<any>) => {
         const data = result.data;
         if (data.length > 0) {
-          // Dynamically create column definitions from CSV header
-          const columns = Object.keys(data[0]).map((key) => ({
+          const columns: ColumnDef[] = Object.keys(data[0]).map((key) => ({
             field: key,
-            filter: true, // Enable filtering on all columns
+            filter: true,
             cellStyle: (params: any) => {
               const rowId = params.node.id;
               const field = params.colDef.field;
-          
-              // Check if this cell has pending changes
               const isPending = pendingChanges[rowId]?.includes(field);
               return isPending
-                ? { backgroundColor: "#ffefc3", color: "#6c4e03" } // Highlight pending changes with yellow
+                ? { backgroundColor: "#ffefc3", color: "#6c4e03" }
                 : { backgroundColor: "white", color: "black" };
             },
           }));
 
-          // Add Edit button column
           columns.push({
             headerName: "Actions",
-            field: "actions", // Add a field name for the actions column
+            field: "actions",
             cellRenderer: (params: any) => (
               <button
                 onClick={() => handleEditButtonClick(params.data)}
@@ -67,37 +61,33 @@ const GridTable: React.FC<GridTableProps> = ({ tableName }) => {
               </button>
             ),
             width: 100,
-            filter: false, // Disable filtering for actions column
+            filter: false,
           });
 
-          setColDefs(columns); // Set columns for Ag-Grid
-          setRowData(data); // Set row data for Ag-Grid
+          setColDefs(columns);
+          setRowData(data);
         }
       },
       error: (err: Error) => console.error("Error parsing CSV file: ", err),
     });
-  }, [tableName, pendingChanges]); // Re-run if pending changes are updated
+  }, [tableName, pendingChanges]);
 
-  // Function to handle Edit button click
   const handleEditButtonClick = (data: any) => {
-    setSelectedRowData(data); // Store the row data to be edited
-    setEditedData({ ...data }); // Prefill the modal form with row data
-    setIsModalOpen(true); // Open the modal
+    setSelectedRowData(data);
+    setEditedData({ ...data });
+    setIsModalOpen(true);
   };
 
-  // Handle form input changes in the modal
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
 
-    // Optional validation logic (e.g., numeric validation)
     if (name === "numericField" && isNaN(Number(value))) {
-      toast.error("Please enter a valid number"); // Show error if it's not a number
+      toast.error("Please enter a valid number");
       return;
     }
 
-    setEditedData({ ...editedData, [name]: value }); // Update the editable fields
+    setEditedData({ ...editedData, [name]: value });
 
-    // Add this change to the pendingChanges state
     const rowId = rowData.indexOf(selectedRowData);
     setPendingChanges((prevChanges: any) => ({
       ...prevChanges,
@@ -105,15 +95,12 @@ const GridTable: React.FC<GridTableProps> = ({ tableName }) => {
     }));
   };
 
-  // Handle save in the modal
   const handleSave = () => {
     const updatedRowData = rowData.map((row) =>
       row === selectedRowData ? editedData : row
     );
-    setRowData(updatedRowData); // Update the AG Grid row data
-    setIsModalOpen(false); // Close the modal
-
-    // Show a confirmation popup after save
+    setRowData(updatedRowData);
+    setIsModalOpen(false);
     toast.success("Your edited data will reflect here once admin approves it.");
   };
 
@@ -122,31 +109,29 @@ const GridTable: React.FC<GridTableProps> = ({ tableName }) => {
       <AgGridReact
         rowData={rowData}
         columnDefs={colDefs}
-        pagination={true} // Enable pagination
-        paginationPageSize={10} // Set page size
-        paginationPageSizeSelector={[10, 20, 50, 100]} // Include 10 in the page size selector
-        suppressMenuHide={true} // Keep the filter and menu button always visible
+        pagination={true}
+        paginationPageSize={10}
+        paginationPageSizeSelector={[10, 20, 50, 100]}
+        suppressMenuHide={true}
       />
 
-      {/* Modal for Editing */}
       <Modal
         isOpen={isModalOpen}
         onRequestClose={() => setIsModalOpen(false)}
         contentLabel="Edit Row"
-        className="fixed inset-0 flex justify-center items-center" // Center the modal
-        overlayClassName="fixed inset-0 bg-black bg-opacity-50" // Darken background
+        className="fixed inset-0 flex justify-center items-center"
+        overlayClassName="fixed inset-0 bg-black bg-opacity-50"
       >
         <div className="bg-white p-8 rounded-lg w-[500px] max-h-[70vh] font-poppins flex flex-col ">
           <h2 className="text-lg font-medium mb-4 font-poppins ">Edit Row</h2>
-          <div className="flex-grow overflow-y-auto"> {/* Scrollable area */}
+          <div className="flex-grow overflow-y-auto">
             {selectedRowData && (
               <form>
-                {colDefs.map((col: any, index: number) => (
+                {colDefs.map((col: ColumnDef, index: number) => (
                   <div key={index} className="mb-4">
                     <label className="block text-sm font-medium text-gray-700">
                       {col.field}
                     </label>
-                    {/* Display input for 2nd and 3rd columns only */}
                     {index === 1 || index === 2 ? (
                       <input
                         type="text"
@@ -182,7 +167,6 @@ const GridTable: React.FC<GridTableProps> = ({ tableName }) => {
         </div>
       </Modal>
 
-      {/* Toast notification container */}
       <ToastContainer />
     </div>
   );
