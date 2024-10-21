@@ -16,9 +16,9 @@ interface ColumnDef {
   field: string;
   filter: boolean;
   cellStyle: (params: any) => { backgroundColor: string; color: string; };
-  headerName?: string; // optional property for header name
-  cellRenderer?: (params: any) => JSX.Element;
-  width?: number;
+  headerName?: string; // Optional property for header name
+  cellRenderer?: (params: any) => JSX.Element; // Optional property for cell renderer
+  width?: number; // Optional property for width
 }
 
 const GridTable: React.FC<GridTableProps> = ({ tableName }) => {
@@ -39,13 +39,13 @@ const GridTable: React.FC<GridTableProps> = ({ tableName }) => {
         const data = result.data;
         if (data.length > 0) {
           // Dynamically create column definitions from CSV header
-          const columns: ColumnDef[] = Object.keys(data[0]).map((key) => ({
+          const columns = Object.keys(data[0]).map((key) => ({
             field: key,
             filter: true, // Enable filtering on all columns
             cellStyle: (params: any) => {
               const rowId = params.node.id;
               const field = params.colDef.field;
-
+          
               // Check if this cell has pending changes
               const isPending = pendingChanges[rowId]?.includes(field);
               return isPending
@@ -57,6 +57,7 @@ const GridTable: React.FC<GridTableProps> = ({ tableName }) => {
           // Add Edit button column
           columns.push({
             headerName: "Actions",
+            field: "actions", // Add a field name for the actions column
             cellRenderer: (params: any) => (
               <button
                 onClick={() => handleEditButtonClick(params.data)}
@@ -66,6 +67,7 @@ const GridTable: React.FC<GridTableProps> = ({ tableName }) => {
               </button>
             ),
             width: 100,
+            filter: false, // Disable filtering for actions column
           });
 
           setColDefs(columns); // Set columns for Ag-Grid
